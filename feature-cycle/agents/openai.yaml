@@ -1,4 +1,4 @@
 interface:
   display_name: "Feature Cycle"
-  short_description: "Implement, test, and report on a Unity feature branch"
-  default_prompt: "Use $feature-cycle to implement the described feature in a dedicated branch, verify it in Unity, remove temporary tests, and leave a Markdown status report."
+  short_description: "Implement, test, and review a Unity feature branch"
+  default_prompt: "Use $feature-cycle to implement the feature in a dedicated branch, verify it in Unity, run Performance & Reliability Code Review and fix confirmed issues, then remove temporary tests, verify the final tree, and leave a Markdown status report."

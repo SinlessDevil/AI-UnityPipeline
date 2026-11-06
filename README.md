@@ -1,6 +1,6 @@
 # AI Unity Pipeline
 
-Project rules and reusable skills for Codex and Claude Code in existing Unity projects. Set up rules first, then custom skills, official Unity skills, and the Unity connection. Instructions are in English; generated reports and chat summaries follow the user's language.
+Project rules and reusable skills for Codex and Claude Code in existing Unity projects. This repository is a toolkit, not a Unity project: do not run Unity builds here or modify external projects while maintaining it. Set up rules first, then custom skills, official Unity skills, and the Unity connection. Instructions are in English; generated reports and chat summaries follow the user's language.
 
 ## 1. Installation
 
@@ -21,24 +21,27 @@ Copy these files into the target project's root, alongside `Assets`, `Packages`,
 | [AGENTS.md](AGENTS.md) | `<UnityProject>/AGENTS.md` | Codex |
 | [CLAUDE.md](CLAUDE.md) | `<UnityProject>/CLAUDE.md` | Claude Code |
 
-If either destination already exists, preserve it and use the update instructions below. These files came from a particular Unity project and must be adapted before use in another project.
+If either destination already exists, preserve it and use the update instructions below. `AGENTS.md` and `CLAUDE.md` each contain the full engineering and workflow rules; neither requires the other for its main instructions. Install the file for each agent you use, or both when using both agents. Adapt project facts before use. Keep the engineering rule bodies synchronized whenever updating this repository.
 
 ### Step 2: Adapt the rules to the current project
 
-Inspect the target project's version, packages, settings, code, and conventions. Update both files consistently. Change only project-specific mismatches; keep the remaining rules as they are.
+Inspect the target project's version, packages, settings, code, and conventions. Adapt each installed rule file consistently, preserving agent-specific instructions. The detailed Microsoft C# style, SOLID, DI/services/factories, MVVM, preferred stack, and shader constraints are established engineering preferences. Do not remove or replace them with generic advice merely to shorten instructions. Change a standard only for an explicit user choice or a verified incompatibility; document the reason and the replacement convention in the affected rules.
+
+After adaptation, distinguish rules for maintaining this toolkit from rules for working in the target Unity project; the toolkit-only restriction on external projects must not prohibit work in the chosen target. Do not refactor the target project or install packages automatically to make it match the template.
 
 | Area | What to adapt |
 | --- | --- |
-| Unity version | Read `ProjectSettings/ProjectVersion.txt` and use that exact version. Replace the source project's `6000.5.3f1` references. Do not upgrade Unity as part of setup. |
-| Rendering | Identify the actual pipeline and package version. Keep URP rules only for URP. For Built-in, use Built-in shader and rendering conventions; for HDRP, use the project's HDRP conventions. Remove incompatible tags, includes, shader targets, and render-feature assumptions. |
-| UI and editor tools | Follow the existing choice: uGUI, UI Toolkit, IMGUI editor tools, or inspector-only tooling. Replace blanket requirements that conflict with the project. |
-| Architecture and dependency management | Keep Zenject instructions only if Zenject is used. Otherwise describe the actual composition and initialization approach, including existing singletons if applicable, or remove the Zenject section. Do not introduce a dependency framework to match this template. |
-| Packages | Keep UniTask, DOTween, Addressables, billing, and other package-specific rules only where applicable. Document the project's existing alternatives. |
-| Platforms and performance | Replace TV-only, Android, graphics API, and performance assumptions with the project's actual targets and constraints. |
-| Paths and lifecycle | Correct namespaces, assemblies, folders, entry points, scenes, save systems, and resource paths. Remove references to source-project classes that do not exist. |
-| Git and verification | Record actual branches, integration conventions, commit style, test locations, and build or test commands. |
+| Unity version | Read `ProjectSettings/ProjectVersion.txt` and use that exact version. Resolve package versions from the manifest/lockfile; do not pair an Editor with an assumed URP version. Do not upgrade Unity as part of setup. |
+| Rendering | Identify the active pipeline, renderer, and resolved package version. Adapt URP tags/includes/APIs for Built-in or HDRP as needed, with compatible shader targets. Retain precision, UV, variants, fragment-operation and render-pass cost constraints; adapt SRP Batcher rules only to a verified incompatible batching strategy. |
+| UI and editor tools | Prefer uGUI runtime UI and UI Toolkit editor tools where compatible. Preserve an established UI Toolkit runtime, IMGUI editor, or inspector-only workflow. Retain the detailed View/ViewModel/Model responsibilities for compatible new UI; do not migrate existing screens. |
+| Architecture and dependency management | Preserve SOLID, interface-first services, DI, composition-root registration, factories, state flow, and lifecycle conventions where compatible. Apply Zenject binding/tick/initialization rules when present; otherwise describe the existing approach and the reason for adaptation. Do not install Zenject or impose a new architecture. |
+| Packages | Zenject, UniTask, DOTween, and Addressables remain the preferred stack. Verify presence, versions, and applicability. If absent/incompatible, document the project's existing alternative and adapt only the affected package-specific rules; do not automatically add dependencies. |
+| Platforms and performance | Record actual target platforms, graphics APIs, and performance constraints. Do not assume TV-only behavior or a measured bottleneck. |
+| Paths and lifecycle | Record actual namespaces, assemblies, folders, entry points, scenes, save systems, resource paths, and lifetime/ownership conventions. |
+| Git and verification | Record actual branches, integration conventions, commit style, test locations, and available verification tools. `feature-cycle` includes temporary tests, Editor-created test resources, review, and reports; optional-testing defaults must not prohibit that requested workflow. |
+| Code style | Preserve the detailed Microsoft C# rules: naming, Allman, member order, `readonly`, extensions, and expected-state null-checks. Change a convention only for a documented incompatibility or explicit user instruction, without cosmetic refactoring. |
 
-Keep unaffected code style, change-scope, asset hygiene, and other working rules. Adapt the instructions to the project without refactoring the project to fit the instructions.
+Keep unaffected engineering standards, change-scope, asset hygiene, and other working rules. Concrete source-project classes, TV/IAP behavior, scenes, and asset paths are not universal rules; the original configuration remains available in Git history. Record the target project's actual implementation instead of copying those assumptions.
 
 Example request:
 
@@ -46,8 +49,10 @@ Example request:
 Adapt AGENTS.md and CLAUDE.md to this Unity project. Inspect its pinned
 Editor version, render pipeline, UI and editor tooling, architecture,
 packages, folders, Git workflow, and verification commands. Change only
-project-specific mismatches and keep the remaining rules unchanged.
-Keep both files consistent. Do not change game code or project settings.
+project-specific mismatches and keep the detailed engineering standards.
+Document any genuine incompatibility and its replacement convention.
+Keep installed rule files consistent and self-contained. Do not change
+code, project settings, or dependencies as part of this adaptation.
 ```
 
 ### Step 3: Install the two custom skills
@@ -56,7 +61,7 @@ Install these first, in this order:
 
 | Skill | Purpose | Example |
 | --- | --- | --- |
-| [feature-cycle](feature-cycle/SKILL.md) | Implement a Unity feature in a dedicated branch, verify it in Unity, fix failures, remove temporary tests, and commit the result with a Markdown status report. | `Use $feature-cycle to add saved puzzle progress.` |
+| [feature-cycle](feature-cycle/SKILL.md) | Implement a Unity feature in a dedicated branch, run functional checks and mandatory Performance & Reliability Code Review, fix confirmed issues, remove temporary tests, verify the final tree, and commit with a Markdown status report. | `Use $feature-cycle to add saved puzzle progress.` |
 | [chat-notes](chat-notes/SKILL.md) | Save conversation decisions, results, and remaining tasks in a dated Markdown file in the project's documentation folder. | `Use $chat-notes to save this conversation.` |
 
 For Codex, ask:
@@ -77,7 +82,9 @@ For manual installation, copy each complete skill folder, including `SKILL.md` a
 
 Existing Codex setups may also use `~/.codex/skills/`, including the bundled installer's default destination. Check that location before adding a duplicate. Keep one installation per skill for each agent. If a skill is not visible, start a new session.
 
-Feature Cycle needs the pinned Unity Editor and a usable license for verification. Chat Notes does not require a Unity connection.
+`feature-cycle` follows this order: implementation → functional verification → Performance & Reliability Code Review and scoped fixes/rechecks → temporary test cleanup → final-tree verification → status report and feature-branch commit. Review covers the complete feature diff and only relevant GC/memory, CPU, lifecycle/reliability, and UI/rendering paths. Its [review reference](feature-cycle/references/performance-reliability-review.md) defines P0/P1/P2, evidence requirements, independent review or an explicit second pass, and a no-progress stopping rule. No separate review skill is needed.
+
+The single `Status.md` records functional results, review results and fixed findings, unresolved confirmed findings and unconfirmed risks, rechecks, cleanup/final verification, limits, and required Profiler/device actions. Missing Editor execution is reported as incomplete; missing profiling limits performance claims and blocks readiness only when the acceptance criteria require that measurement. Existing tests are preserved; temporary checks are kept only on explicit request or while needed to diagnose a blocked run. Feature Cycle needs the pinned Unity Editor and a usable license for functional verification. Chat Notes retains its summary-only scope and does not require a Unity connection.
 
 ### Step 4: Install official Unity skills
 
@@ -166,7 +173,7 @@ Check both rule files, all relevant skill scopes, installed Unity plugins, the U
 
 | Component | If present and working | If missing |
 | --- | --- | --- |
-| `AGENTS.md` / `CLAUDE.md` | Keep the adapted project rules; do not download replacements over them. | Copy only the missing file and adapt it to this project and the other rule file. |
+| `AGENTS.md` / `CLAUDE.md` | Keep the adapted project rules; merge relevant upstream changes only when requested. | Copy only the missing agent's self-contained file; adapt it consistently with existing project rules without overwriting them. |
 | `feature-cycle` / `chat-notes` | Keep the installed skill; do not reinstall in another scope. | Install only the missing skill from this repository. |
 | Official Unity skills or plugin | Keep the existing compatible distribution. | Install a compatible official distribution for the intended agent. |
 | Unity CLI | Keep the working installation. | Install if the chosen Unity 6+ connection needs it. |
@@ -189,11 +196,11 @@ Pulling this repository does not update files or skills previously copied into a
 
 ### Step 3: Preserve adaptations and verify
 
-Keep project-specific rendering, UI, dependency management, version, platform, and workflow decisions. If the user explicitly requests newer rule contents, compare upstream changes and merge relevant changes into the adapted files rather than replacing them wholesale.
+Keep project-specific rendering, UI, dependency management, version, platform, and workflow decisions. If the user explicitly requests newer rule contents, compare upstream changes and merge relevant changes into the adapted files rather than replacing them wholesale. Keep detailed engineering standards unless a documented incompatibility or explicit user instruction requires a change. Update both installed rule bodies consistently while preserving agent-specific sections; each must remain self-contained. When only one agent's file is installed, updating it must not require installing the other.
 
 For an explicit skill or plugin version update, use the original installation method and preserve local edits. The Codex skill installer refuses to overwrite an existing skill folder; it is not an in-place updater. Do not delete an installation just to bypass that check. Compare and merge changes deliberately. Update the CLI through the package manager or installation method that owns it, and check compatibility before changing Editor packages.
 
-Confirm that both rule files match the project, skills are discoverable without duplicates, and the Unity connection works where applicable. Report what was already present, added, repaired, or skipped, and any remaining blocker. Claim connection verification only after a request reaches the intended Editor.
+Confirm that each installed rule file is self-contained, their common engineering rules agree when both are present, skills are discoverable without duplicates, and the Unity connection works where applicable. When updating `feature-cycle`, include its `references/` folder and metadata so the review procedure is installed too. Report what was already present, added, repaired, or skipped, and any remaining blocker. Claim connection verification only after a request reaches the intended Editor.
 
 Example update request:
 
