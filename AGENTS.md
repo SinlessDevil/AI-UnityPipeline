@@ -1,141 +1,55 @@
 # AGENTS.md
 
-This file provides guidance to OpenAI Codex when working with code in this repository.
+Shared working rules for Codex and Claude Code. Read [README.md](README.md) for installation and update instructions.
 
-## Project
+## Scope and adaptation
 
-A production Unity game template for mobile + Android TV, built on **Zenject** DI and **Unity Addressables**. The `README.md` is detailed and authoritative on architecture — read it before large changes. Note: `README.md` claims Unity 2023.2.22f1, but the actual editor is pinned in `ProjectSettings/ProjectVersion.txt` (**6000.5.3f1**) — trust the latter.
+AI-UnityPipeline is a toolkit of instructions and skills, not a Unity game. It has no Editor version, render pipeline, scenes, gameplay assemblies, or Unity build to run. When maintaining this repository, edit only the requested instructions, metadata, and supporting resources; validate Markdown links, skill frontmatter, YAML, and the final diff. Do not modify Unity projects elsewhere on the machine.
 
-## Git workflow and commit messages
+When copying these rules into a Unity project, adapt the target-project guidance below to that project's verified facts. Keep the scope distinction until adaptation is complete: do not treat missing Unity files in this toolkit as broken project wiring. Keep both agent entry points available; `CLAUDE.md` delegates shared rules to this file.
 
-### Branches and integration
+User instructions and environment permissions take precedence. Task-specific workflow requests can override defaults here, but do not override an explicit current restriction or grant unavailable access.
 
-- **`dev` is the main development and integration branch.** Start each new feature from `dev` in a separate **`feature/<short-name>`** branch, following the existing `feature/puzzle-prototype` naming style.
-- Keep the work for a feature in its feature branch. Integrate the completed feature into `dev` using **squash merge**, so `dev` receives one commit describing the complete feature.
-- **`master` is the planned release branch.** Prepare releases from the integrated work in `dev`; identify releases by platform and version, for example **Android 1.0.0**.
-- The exact release tag or release branch naming format has not been specified. Preserve the user's platform/version hierarchy when it is defined.
-- Check the actual local and remote branches before branch operations: `dev` and `master` are the intended workflow and may not exist yet in an older checkout that still has `main`.
+## Branches and commits
 
-### Commit titles
+- Check Git status and actual local/remote branches before changing branches. Preserve unrelated or unfinished work; use a separate worktree when needed.
+- Develop each feature in `feature/<short-name>` from the user-specified base or actual integration branch. Use `dev` where established; this toolkit currently uses `main`. Do not invent `dev` or a release branch.
+- Keep the feature branch for review. When integration is requested, use a squash merge unless the target project specifies otherwise. Push, pull request creation, and merge require task authorization.
+- Use concise English commit titles: `feat:` for capabilities, `add:` for supporting files, `edit:` for changes and cleanup, and `fix:` for defects or optimizations. Exclude unrelated files and temporary results.
 
-Use **`<prefix>: <short description>`**, with a lowercase prefix and a concise English description, matching the existing history. These are the project's own conventions:
+## Task scope, files, and verification
 
-| Prefix | Meaning | Example |
-|---|---|---|
-| `feat:` | A new feature or capability | `feat: save level progress` |
-| `add:` | Added files or supporting content, such as tests or documentation | `add: input tests` |
-| `edit:` | Changes to existing code, configuration or documentation, including cleanup and refactoring | `edit: unify input services` |
-| `fix:` | Bug fixes or optimizations | `fix: reduce input allocations` |
+- Edit the file types needed by the authorized task. Documentation, YAML metadata, reports, tests, and test helpers are valid outputs; there is no code-only restriction on this toolkit.
+- Invoking `feature-cycle` requests the whole workflow: implementation, functional checks, temporary tests and necessary temporary resources, Performance & Reliability Code Review, fixes, cleanup, final verification, and `Status.md`. Do not ask again merely because general defaults make tests optional.
+- Outside `feature-cycle`, choose proportionate verification for the task; permanent unit tests are optional unless requested or required by the project. A request for `chat-notes` permits its Markdown summary, without code changes or Git mutations.
+- Use available Editor/CLI/MCP or batch-mode tooling for an authorized Unity task. Do not impose a blanket ban on local compilation or testing. Preserve the user's open Editor and unsaved work; verify the target project before Editor operations.
+- Report what actually ran and its evidence. If the Editor, license, test harness, profiler, or device is unavailable, record the limitation rather than claiming success. Static review does not establish measured performance.
+- Follow the skill's own sequence and report requirements instead of duplicating them here. `feature-cycle` performs mandatory review after functional success and before temporary test cleanup and the final commit. If functional execution is blocked, a static review may still help, but does not satisfy the functional gate.
 
-Use these prefixes for commits within feature branches and for the final squash commit. A squash title describes the final combined result of the branch.
+## Target-project guidance: adapt before applying
 
-## Commands
+Use `ProjectSettings/ProjectVersion.txt`, `Packages/manifest.json`, `Packages/packages-lock.json`, relevant settings, and existing code to establish the following. Do not assume the source project's classes, paths, platforms, installed packages, or performance bottleneck.
 
-There is no CLI build/test wrapper in this repo. Everything runs through the Unity Editor or `Unity.exe -batchmode`.
+### Architecture and code
 
-- **Run the game:** open `Assets/Scenes/Initial.unity` (the only scene in Build Settings) and enter Play Mode. All other scenes load via Addressables.
-- **First-time setup / after touching addressable assets:** *Window → Asset Management → Addressables → Groups* → *Build → New Build → Default Build Script*. To iterate without rebuilding bundles, set **Play Mode Script** to *Use Asset Database*.
-- **Tests:** *Window → General → Test Runner* (EditMode + PlayMode tabs), or the project's own *Tools → Tests Tool Window*. Tests live in `Assets/Tests/{EditMode,PlayMode}` under the `Tests.EditMode` / `Tests.PlayMode` asmdefs.
-- **Batch-mode tests (CI):** `Unity.exe -runTests -batchmode -projectPath . -testPlatform EditMode -testResults results.xml` (swap `PlayMode` for the other suite). To run one test, add `-testFilter "Namespace.ClassName.TestName"`.
+- Preserve the existing composition root, dependency direction, state/scene transitions, initialization, and resource ownership. Do not impose a new architecture, singleton policy, or UI pattern as part of a feature.
+- If Zenject is present, register new services in the actual installer and respect binding scope, initialization, ticking, and disposal. Otherwise follow the project's existing dependency management. Use UniTask, Addressables, DOTween, or other integrations only where already adopted or explicitly requested.
+- Follow established C# style. Default conventions when none are specified: Allman braces, `_camelCase` private fields, `readonly` where appropriate, `var` for obvious local types, and expression-bodied one-liners. Keep helpers in the project's established extension/helper folders.
+- Do not silently swallow missing required bindings or serialized references. Validate wiring clearly at appropriate boundaries. Handle expected optional values, destroyed Unity objects, cancellation, and teardown states explicitly where the lifecycle requires it.
+- Use existing resource-path constants, factories, initialization idioms, and save abstractions. Do not assume a class such as `BootstrapInstaller` or `ResourcePath` exists.
 
-### Editor dev tools (custom menu items)
+### UI and rendering
 
-- *GameEditors → ⚙ Game Config Editor* (`%F3` / Ctrl+F3) — central config editor
-- *Tools → IAP Validation Window* — validates the `SubscriptionsConfig` subscriptions and their child/parent SKUs
-- *Tools → TV Validation Window* — TV focus/navigation validation
-- *Tools → Audio Window/Sound Library*, *Tools → Save Window/...*, *Tools → Text Migration Window*
+- Follow the project's actual runtime UI and editor tooling: uGUI, UI Toolkit, IMGUI, or inspector-only tools as applicable. Keep presentation separate from business logic where the project does so; do not migrate existing screens to a new pattern without a requirement.
+- Determine the active render pipeline, renderer configuration, installed package versions, build targets, and graphics APIs. Do not equate Unity 6 with URP 14 or assume a fixed Forward renderer. Use documentation matching the resolved packages.
+- For URP shaders, follow the installed URP's HLSL includes, pipeline tags, and SRP Batcher layout where applicable. For Built-in or HDRP, follow that pipeline's conventions instead. Shader targets, precision, keyword scope, Render Graph integration, and Shader Graph use depend on project requirements.
+- Evaluate material instances and MaterialPropertyBlocks against the actual batching/instancing strategy and resource ownership. Do not replace them categorically with per-object materials.
+- New depth/opaque textures, fullscreen passes, shadows, HDR, transparency, fragment branching, or procedural effects require a justified cost assessment for the target. Do not ban valid rendering techniques or claim a bottleneck without evidence; keep settings changes within the authorized feature.
+- Compile changed shaders in the target Editor when available. Functional or compilation success does not establish GPU cost: use Frame Debugger and an appropriate profiler/device check when needed, and report unavailable checks.
 
-## Compile symbols (purchasing)
+### Unity assets and temporary verification
 
-Purchasing code is gated behind scripting-define symbols — large parts of `BootstrapInstaller`, `BootstrapAnalyticState`, and the whole `Services/Purchases` tree are `#if`-wrapped. When editing those files, know which symbols are active or code will appear dead:
-
-- `WBILLING` — UniWrapper Billing backend + all billing-dependent bindings
-- `UNI_WRAPPER` — the whole `Uni.Wrapper` package (ads, analytics, rate-us, premium-state sync)
-- `WPURCHASING` — retired. The Unity IAP backend and its `IAPBillingAdapter` bridge were deleted; only `Services/Purchases/IAPProduct` is kept, `#if WPURCHASING`-fenced and never compiled, as a reference for the old catalog-based flow.
-
-Game code never touches the `#if`-gated purchasing tree directly: it goes through `IPremiumService` (perk/availability queries, purchases) and `IOfferService` (the offer popup), both of which always compile. Neither may take `IBillingProductService`/`ISubscriptionProductService` as a constructor dependency — see the note in `PremiumService`.
-
-## Architecture (big picture)
-
-Strict dependency direction: **Infrastructure → Services → Game Logic**. Code namespace root is `Code`; all gameplay/runtime code is in the `Game` asmdef (`Assets/Code/Game.asmdef`), editor code in `GameEditor`.
-
-**Composition root — `BootstrapInstaller` (`Assets/Code/Infrastructure/Installers/`).** A Zenject `MonoInstaller` on the `GameRunner` prefab. `InstallBindings()` wires every service (`Bind*` methods), then `Initialize()` → `BootstrapGame()` enters the state machine at `BootstrapState`. To add a service: register it in the appropriate `Bind*` method here. Three static-data services (`StaticDataService`, `AudioVibrationStaticDataService`, `TVStaticDataService`) are constructed and `.LoadData()`/`.LoadConfig()`-called eagerly in `BindStaticDataService()` before binding — they must be available synchronously.
-
-**Game flow — `IStateMachine<IGameState>`.** Linear state chain, each state injected via Zenject (no service locator):
-`BootstrapState → LoadProgressState → BootstrapAnalyticState → PreLoadGameState → LoadMenuState → LoadLevelState → GameLoopState` (→ Win/Lose). States are bound in `BindGameStates()` and live in `Infrastructure/StateMachine/Game/States/`. `BootstrapAnalyticState` is where purchasing initializes (`PurchasingBootstrapInstaller.InitializeAsync()`, `#if WBILLING`).
-
-**TV platform layer.** The project ships **TV-only**: `BootstrapState.Enter()` hardcodes `isTv = true`, and `PlatformDetect` / `GameConfig.DebugPlatform` were deleted along with the phone path. `StaticDataService.SetPlatformMode(isTv)` records the `IsTv` flag and `UIFactory` then picks TV vs base asset paths. Window configs are **not** platform-switched any more: the project ships TV-only, so `TVWindowsStaticData` is the single window config (the base `WindowsStaticData` and the merge-over-base logic were dropped). TV MonoBehaviours (`TVScreen`, `TVSelectable`) reach services through the static `TVPlatformBootstrap` locator since they can't be Zenject-injected. Removing TV support = drop the `BindTVServices()` call + TV params in `BootstrapState`.
-
-**Asset management — `AssetProvider`.** Addressables cache with two stores: a **temp** cache cleared on scene change (`CleanUp()`) and a **persistence** cache that's never cleared. `SceneLoader` releases the previous scene handle before each load. Windows (`WindowConfig` → `AssetReferenceGameObject`) load through the temp cache and free automatically on scene transition.
-
-**Static data.** ScriptableObjects under `Assets/Resources/StaticData/`, loaded synchronously at boot. See the README table for the full asset → path map (`GameConfig`, `Balance`, `WindowsStaticData` / `TVWindowsStaticData`, `Sounds`, `TVConfig`, `SubscriptionsConfig`, etc.).
-
-**Save system.** `ISaveLoadFacade` (`UnifiedSaveLoadFacade`) dispatches per-call between PlayerPrefs (`PrefsSaveLoadService`) and JSON (`JsonSaveLoadService`) via a `SaveMethod` enum. Progress is read through `IPersistenceProgressService`.
-
-## Development rules
-
-These are the project's standing conventions — follow them for new code unless the user says otherwise.
-
-### Stack
-- Third-party plugins in use: **Zenject** (DI), **UniTask** (async), **DOTween** (tweens), **Addressables** (asset/scene loading), **UI Toolkit** (editor windows only — see UI rules). These are current and trusted; do not audit or second-guess them.
-- Unity **6000.5.3f1** (`ProjectSettings/ProjectVersion.txt`) — write code against this version and the existing architecture, not newer APIs.
-
-### Code style
-- **Strict Microsoft C# style.** Private fields are `_camelCase` with a leading underscore; `readonly` wherever possible. Braces on their own lines (Allman), `var` for obvious local types, expression-bodied members (`=>`) for one-liners (see `LevelService`).
-- **Member order inside a type, top to bottom:** constants/`static readonly` → serialized/private fields → properties → events/Actions → constructor (plain or Zenject `Constructor()` init) → public methods → private methods. Keep new code in this order; mirror a neighbouring service.
-- **No defensive null-checks.** Do not guard serialized/injected references (`if (_field != null) …`, `x == null → return`) just in case. A missing `.asset`, an unassigned inspector field or a forgotten binding must throw a loud `NullReferenceException` — that's how the user finds the wiring mistake. Write a null-check only when `null` is a real, expected state that the logic must branch on (e.g. "no pooled instance yet → create one", "unbound slot → fall back to the global input adapter").
-- **Extensions go in `Assets/Code/Extensions`.** Reusable helper/extension methods belong there as `*Extensions` classes (e.g. `TransformExtensions`, `NumericExtensions`), not scattered inline. Add your own there when it makes sense.
-
-### Shaders
-- **The pipeline is URP 14 Forward, never Built-in.** Project shaders live in `Assets/Code/Shaders`, named `Custom/URP/<Name>`. Required: the `"RenderPipeline" = "UniversalPipeline"` tag, an `HLSLPROGRAM` block (not `CGPROGRAM`), and includes from `Packages/com.unity.render-pipelines.universal/ShaderLibrary/`. `UnityCG.cginc`, `UnityObjectToClipPos`, `fixed4` and surface shaders are Built-in — they must not appear in new code.
-- **Target hardware:** Android Vulkan + GLES3 (no GLES2), plus Android TV. Tile-based GPUs, and the measured ceiling is fill rate / overdraw, not ALU.
-- **Every shader must:**
-  - Wrap all material properties in `CBUFFER_START(UnityPerMaterial) … CBUFFER_END`, or the renderer drops out of the SRP Batcher. For the same reason, don't drive per-instance values through a `MaterialPropertyBlock` — make a separate material.
-  - Use `half` by default for colour/mask/alpha, `float` only where range matters (world position, time, atlas UV). The existing shaders already do this — mirror `WaterTiles` / `MenuBackground`.
-  - Declare `#pragma target 3.0` for world shaders, `2.0` for UI shaders.
-  - Compute UV math in the vertex shader and pass it through an interpolator; use dependent texture reads (UV computed in the fragment) only when there is no alternative.
-  - Gate variants with `shader_feature_local` / `multi_compile_local` only — never a global `multi_compile`.
-- **Not allowed without asking first:**
-  - `_CameraOpaqueTexture` and `_CameraDepthTexture` — both are off in `Assets/Resources/URP/URP Asset.asset` (`m_RequireOpaqueTexture: 0`, `m_RequireDepthTexture: 0`). Requesting either turns on an extra full-screen pass for the whole game.
-  - `GrabPass` (Built-in only, does nothing in URP), HDR effects (`m_SupportsHDR: 0`), real-time shadows (`m_MainLightShadowsSupported: 0`).
-  - A new `ScriptableRendererFeature` with full-screen passes. Precedent: `ShadowMaskFeature` cost two full-screen passes every frame for a picture that changes once every few seconds, and was replaced by a CPU bake (`Code/Services/Shadows`). Before writing a pass, ask whether the result can be baked instead.
-  - `clip()` / `discard` — it breaks early-Z on tile-based GPUs. Fine for UI masking (`UNITY_UI_ALPHACLIP`), not for world sprites.
-  - Loops with a variable iteration count, and branching on non-uniform values in the fragment stage.
-  - Per-pixel procedural full-screen backgrounds. If the image is static, bake it to a texture (see `MenuBackground`) instead of evaluating it every frame.
-- **Shader Graph is off by default.** Write HLSL by hand — a graph can't be reviewed in a diff and explodes the variant count. Use it only when explicitly asked.
-- **No local verification.** Shaders don't compile from here. After editing one, tell the user to recompile in Unity and check the Frame Debugger / on-device GPU profiler — never claim it "works".
-
-### Folders (where things live)
-- `Assets/Code` — all runtime/editor code.
-- `Assets/Tests` — EditMode + PlayMode tests.
-- `Assets/Resources/StaticData` — ScriptableObject configs (loaded synchronously at boot).
-- `Assets/ResourcesAddresable` — prefabs/scenes spawned & loaded into memory via Addressables.
-
-### Core patterns
-- **Entry point = `BootstrapInstaller`** (`Assets/Code/Infrastructure/Installers/`). This is where everything is composed: services, factories, static-data, and the game state machine are all bound here. New service/factory ⇒ register it in the matching `Bind*` method.
-- **State machine flow.** The app is driven by a strict state-machine chain (`IStateMachine<IGameState>`): switching screens, leaving menu, entering gameplay, win/lose all go through states in `Infrastructure/StateMachine/Game/States/`. Don't bypass it for navigation/flow.
-- **Service-per-feature.** Each feature gets its own interface-first service(s): `IFooService` + `FooService`, injected via Zenject, bound with `Container.BindInterfacesTo<FooService>().AsSingle()`. Per-frame work uses `ITickable`; init that must run at bind time uses eager `Container.Resolve<...>()` in the installer (see `BindAudioService`). Mirror an existing service in `Assets/Code/Services` for structure.
-- **Factories.** A complex entity (e.g. the player) gets its own dedicated Zenject factory deriving from `Factory` (`Services/Factories/Factory.cs`) — it loads the prefab via Addressables/`IAssetProvider`, instantiates through `IInstantiator`, and applies the entity's base setup. Async, returns `UniTask`. Trivial entities (a widget, a simple UI element) don't need a dedicated factory — go through a general factory like `UIFactory`. When unsure whether something is "complex enough", ask.
-- **OOP / SOLID** are followed strictly — no service locators, no static singletons for runtime logic (the `TVPlatformBootstrap` static locator exists only because TV MonoBehaviours can't be Zenject-injected).
-- **Async = UniTask**, not raw `Task` or coroutines, for new code.
-
-### UI (when asked to build UI)
-- Stack: **uGUI** (current windows use `RectTransform` + DOTween). Reserve **UI Toolkit** for editor tooling unless told otherwise.
-- New UI follows **MVVM** (here VM = a presenter / presentation model):
-  - **View** — only displays what's on screen (and may host its own animation), no business logic.
-  - **ViewModel (presenter)** — the "conductor": pulls data from the model, computes/calculates presentation-ready values, and feeds the View.
-  - **Model** — owns and serves the raw data.
-- Scope: apply MVVM to **new UI only**. Leave existing `BaseWindow` / `StateWindow` / `IWindowState` windows (`Assets/Code/UI/Menu/Windows`) as-is — don't migrate them unless explicitly asked.
-
-### Testing
-- Unit tests are **optional and per-task**. After finishing a feature, **ask** whether unit tests are wanted in this context rather than writing them by default. Tests live in `Assets/Tests/{EditMode,PlayMode}`.
-
-### TV / assets note
-- Two parallel asset trees mirror base vs TV: `ResourcesAddresable/{Hud,UI}` ↔ `{TVHud,TVUI}`. Adding a screen usually means adding both variants and a `TVWindowsStaticData` override only if TV differs.
-
-### Working in this repo via the filesystem (agent constraints)
-- **Edit only code files by default** — `.cs`, plus `.shader`/`.hlsl` under `Assets/Code/Shaders`. You may *read* anything (`.meta`, `.asset`, `.prefab`, `.unity`, `.mat`, `.shadergraph`, `.uxml`/`.uss`, `.json`, configs) to understand the project, but only **edit/create those code files** unless the user explicitly asks you to change another file type. Never silently hand-edit Unity-serialized assets (`.prefab`, `.unity`, `.asset`, `.meta`) — those are owned by the Editor.
-- **`.meta` / GUID hygiene.** This is a Unity project edited outside the Editor. Every asset/script has a sibling `.meta` with a unique GUID. Do **not** hand-author `.meta` files or invent GUIDs — Unity generates them on reimport, and `GuidDuplicationTest` fails on duplicates. When renaming/moving/deleting a file, move/delete its `.meta` alongside it. A newly created `.cs` will have no `.meta` until the user lets Unity recompile.
-- **No local compile/test feedback loop.** Code is not compiled and Play Mode is not run from here — that happens in the Unity Editor. So: write carefully (no compiler safety net), and after non-trivial changes explicitly tell the user to recompile in Unity and/or run the Test Runner. Don't claim a change "works" — say it's written and needs an in-Editor build/test.
-- **Addresses via `ResourcePath`.** Use the constants in `Code.Services.Factories.ResourcePath` for Addressables/Resources paths instead of inline magic strings. If a needed path isn't there yet, add a constant rather than hardcoding (some legacy paths are still inline — don't multiply them).
-- **`Constructor()` init idiom.** Plain C# classes that aren't Zenject constructor-injected use a `public void Constructor(...)` init method (called manually after creation, ~13 places, e.g. `IWindowState.Constructor`). This is the project's init convention, not an actual C# constructor — follow it for similar classes and don't "fix" it into a real ctor.
+- Let Unity generate `.meta` files and GUIDs. When moving, renaming, or deleting an owned asset, handle its existing sibling `.meta` too; never invent GUIDs.
+- Use Editor APIs/tools to create or modify serialized Unity assets and temporary test resources when the task requires them. Do not silently hand-edit scenes, prefabs, materials, or serialized settings. Restore only changes caused by the task's tests, preserving concurrent user edits.
+- New code, necessary test helpers, and reports are within a requested feature workflow. Keep logs and XML results in temporary storage; record evidence paths without committing generated noise.
+- Keep existing tests. Tests created solely for `feature-cycle` verification are temporary by default; retain them only when the user explicitly requests it. Follow the skill's cleanup and final verification steps.

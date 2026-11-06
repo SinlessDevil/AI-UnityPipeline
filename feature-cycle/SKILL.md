@@ -1,56 +1,61 @@
 ---
 name: feature-cycle
-description: Complete a Unity feature from a description, chat context, or task reference in a dedicated branch, including implementation, Editor tests, fixes, temporary test cleanup, and a Markdown status report. Use when asked to implement a feature through this workflow; do not use for a simple question, analysis, or running existing tests alone.
+description: Complete a Unity feature in a dedicated branch with functional tests, mandatory Performance & Reliability Code Review, scoped fixes, temporary test cleanup, and a Markdown status report. Use when asked to implement a feature through this workflow; not for a question, standalone review, documentation-only toolkit maintenance, or running existing tests alone.
 ---
 
 # Feature Cycle
 
-Bring the requested Unity feature to a verified state in a dedicated branch and leave a Markdown status report for the user to review. Invoking this skill requests implementation, running Unity, writing temporary tests, fixing issues found during verification, and removing those temporary tests afterward. Environment permission requirements still apply.
+Implement the requested Unity feature and leave a verified branch and status report for review. Invoking this skill requests the whole workflow, including temporary tests, necessary Editor-created test resources, review, fixes, cleanup, and reporting. This overrides optional-testing defaults, not explicit current user restrictions or environment permissions.
 
-## Input and Context
+## Context and branch
 
-- Accept the feature description from the user's message, established context, or a referenced file or task item. The user may specify the base branch, branch name, feature folder, and report path, but these are optional.
-- Reuse requirements and architecture already read. Read only missing context and affected code; do not restart a full project investigation when the relevant information is already available.
-- Before making changes, recheck mutable facts: Git status, actual branches, local rules, and the Editor version pinned in `ProjectSettings/ProjectVersion.txt`.
-- Derive verifiable acceptance criteria from the request. Make reasonable implementation decisions independently and record them in the report. Ask only for missing information without which the required behavior cannot be determined.
-- A request for this workflow includes testing, even when project defaults suggest not writing tests or not running the local Editor. Continue following the project's other rules.
+- Accept requirements from the message, established context, or referenced task. Reuse known architecture; inspect only missing context and affected code.
+- Confirm this is the intended Unity project. Read its local rules, pinned Editor version, actual packages/pipeline, Git status, and branches. Do not apply this workflow's Unity execution steps to the AI-UnityPipeline toolkit itself.
+- Define observable acceptance criteria and relevant verification. Make reasonable implementation decisions and record assumptions. Ask only when missing information prevents determining required behavior.
+- Create `feature/<short-name>` from the specified base or actual integration branch. Use `dev` only where established; otherwise use the established alternative. Preserve unrelated work, isolating in a worktree when necessary. Inspect a same-task branch before continuing it; do not overwrite another task's branch.
+- Record the starting revision and relevant pre-existing changes so review can cover the entire feature, including committed, staged, unstaged, and new files, without including unrelated work.
+- Use `Docs/Features/<short-name>/Status.md` unless the project or user specifies another path. Put production code in its architectural folders. Track temporary files and test side effects so cleanup removes only this invocation's artifacts.
 
-## Branch and Feature Folder
+## Functional implementation and verification
 
-- Create a dedicated `feature/<short-name>` branch from the user-specified base or the project's actual integration branch. If `dev` does not exist, use the project's established alternative rather than inventing a new main branch.
-- Preserve other people's changes and unfinished work. Isolate the work in a separate worktree when necessary. Continue an existing branch for the same task only after inspecting its contents; do not overwrite someone else's branch with the same name.
-- Create the feature folder according to existing conventions. If no report folder is specified, use `Docs/Features/<short-name>/Status.md`. Place code in the appropriate architectural folders, without duplicating the source tree under `Docs`.
+1. Implement the agreed behavior using the target project's architecture and existing packages; avoid unrelated audits or refactoring.
+2. Write temporary behavioral checks for acceptance criteria and likely regressions. Use EditMode for suitable logic; use PlayMode/Editor checks and gameplay smoke checks for input, animation, scenes, Addressables, and lifecycle behavior as applicable. Verify real composition and transitions when changing DI or states.
+3. Run the pinned Unity version through available Editor/CLI/MCP controls or batch mode. Preserve an existing Editor session and unsaved work. Do not close another project to make testing easier.
+4. Save fresh results and logs per run in a temporary location. For test suites, inspect XML counts, outcomes, skips, and process status; for Editor smoke checks, capture the actual actions and observations. A zero exit code alone is not evidence that checks ran.
+5. Inspect compilation errors, exceptions, and unexpected runtime errors. Associate expected negative-test errors with their tests; do not globally suppress log checks. Assess relevant warnings.
+6. Fix causes and rerun affected checks. Run an appropriate existing suite and integration scenario before the review gate. Do not weaken assertions, disable tests, or change expectations merely to pass; update obsolete expectations only for agreed behavior changes.
 
-## Implementation and Verification
+Proceed to the mandatory review gate after functional success. If execution is blocked, record failed or unrun checks and preserve the work; a useful static review may still be performed but cannot substitute for functional verification. Stop repeating a failure when no new evidence or remedy makes progress possible.
 
-1. Implement the requested behavior according to the project's architecture. Do not expand the task into a general audit or unrelated refactoring.
-2. Write temporary checks for the acceptance criteria and likely regressions. Test observable behavior rather than reproducing the implementation in a test.
-3. Use EditMode for logic and validation. For input, animations, scenes, Addressables, and lifecycle behavior, add PlayMode or Editor checks and an appropriate gameplay smoke check. When changing dependency injection or states, verify actual composition and transitions rather than only individually constructed services.
-4. Run the correct pinned Unity version. A closed project can be checked in batch mode. If the Editor is already open, use available controls for that Editor session; do not close it with the user's unsaved work.
-5. Save fresh XML results and logs for every run in a separate temporary folder. Check the process exit code, actual test execution, unexpected skips, and result status. A zero exit code without executed checks is not a success.
-6. Read logs for compilation errors, exceptions, and unexpected runtime errors. Assess warnings by their impact on the feature; expected errors from negative tests must be explicitly associated with a specific test. Do not hide real errors by globally disabling log checks.
-7. Fix the causes of failures and rerun affected checks. Before finishing, run an appropriate existing suite and an integration scenario. Do not weaken assertions, disable tests, or change expected behavior merely to obtain passing results. Update old expectations only when they conflict with the agreed new behavior.
+## Mandatory Performance & Reliability Code Review
 
-Continue the cycle while meaningful fixes remain and acceptance criteria are unmet. Resolve fixable environment and test harness issues within the task's scope. If an external blocker requires unavailable access, a license, or a user decision, preserve the work and record the specific reason. Do not report failed verification as successful or repeat the same failure without a new reason to rerun it.
+Before removing temporary tests or making the final commit, read [the review procedure](references/performance-reliability-review.md) and apply it to every relevant changed production path. Review only applicable GC/memory, CPU, Unity lifecycle/reliability, and UI/rendering categories, with directly related callers and dependencies needed to understand behavior.
 
-## Temporary Test Cleanup
+Prefer an available, authorized independent reviewer with separate context. Provide the feature baseline, complete diff/new files, relevant raw code, acceptance criteria, and actual test evidence; request review only, without leading it toward an intended conclusion. If independent review is unavailable or unauthorized, explicitly perform a second pass over the complete feature diff and related code yourself. Record the review method and coverage.
 
-- By default, tests created specifically by this invocation to verify the feature are temporary. After a successful run, preserve the results, then remove only those tests, their own helper files, and associated `.meta` files. If the user asks to keep the tests, retain them instead.
-- Do not delete existing tests. Remove temporary verification methods added to them after success; retain necessary expectation changes for the new behavior. Do not revert user changes or useful fixes to the existing test harness.
-- Create temporary Unity assets through the Editor in unique folders. Restore content, settings, and user progress modified by tests. Do not invent GUIDs or manually edit Unity-serialized assets.
-- After removing temporary checks, recompile the final project and run appropriate remaining tests or a smoke check. Record results before and after cleanup separately. Verify that production code does not depend on deleted test classes. If final verification finds an error, return to the fix-and-verify cycle; removing tests does not mean the work is complete.
+For confirmed in-scope findings, preserve behavior while fixing them, exercise each defect's trigger with a targeted temporary check or integration reproduction, rerun affected functional checks, and review the changed areas again. Do not remove temporary tests until this cycle is complete. Do not implement speculative optimizations to make the review look clean. Apply the procedure's three-attempt limit per finding and stop sooner without progress; record unresolved findings, unavailable validation, and blockers.
 
-## Status and Completion
+## Temporary test cleanup and final verification
 
-At the end, create or update one `Status.md` file or the Markdown file specified by the user. Write concisely and factually in the user's language:
+- After functional success and the review/fix cycle, preserve evidence and remove only tests, helper files, Editor-created temporary resources, and their associated `.meta` files created solely for this invocation. Keep them if the user explicitly requests retention, including valuable regression tests.
+- Never delete existing tests. Remove only temporary methods added to them; retain necessary expectation updates and useful harness fixes. Restore test-induced content, settings, and user progress without reverting unrelated changes.
+- If blocked before these gates, preserve needed temporary checks for diagnosis and list them in the report; restore harmful test side effects regardless. Do not claim cleanup or success when it did not happen.
+- After cleanup, recompile the final project and run suitable remaining tests or a smoke check. Verify production code does not depend on removed helpers and record final-tree results separately. If unavailable, mark final verification incomplete.
+- If final verification exposes a defect, return to affected functional checks and review before completion. Recreate temporary checks only as needed, then clean up and verify again. Apply the same no-progress stopping rule.
+- Inspect the complete final diff and file inventory for temporary artifacts, unrelated edits, and test-induced asset changes.
 
-- Status: "ready for review", "partially completed", or "blocked".
-- Feature, source of requirements, assumptions, branch, and base branch.
-- What was implemented and which significant issues were found and fixed during verification.
-- What actually ran: Editor version, suites or scenarios, passing and failing test counts, log status, and result paths.
-- Which temporary checks were removed and what was successfully verified on the final tree afterward.
-- Verification limits and remaining manual steps, if any. Passing automated tests do not replace device, performance, or visual checks when those are part of the feature's acceptance criteria.
+## Status and completion
 
-On successful completion, commit the changes and report on the feature branch according to project conventions. Exclude unrelated files and temporary data. Leave the branch for the user to review; push, open a pull request, or merge only when separately requested. If blocked, preserve completed work and the report without marking the feature ready.
+Create or update one `Status.md` in the user's language, concise and factual:
 
-In the response, include the branch, status report path, verification results, and significant limitations. Do not stop after implementation without verification and a report.
+- **Status and scope:** ready for review, partially completed, or blocked; requirements, assumptions, branch/base, and reviewed revision/diff scope.
+- **Functional verification results:** Editor version, suites/scenarios actually run, pass/fail/skip counts where applicable, compilation/log results, and evidence paths. Mark unrun checks explicitly.
+- **Performance review results:** reviewer or second-pass method, applicable categories and inspected paths, findings and evidence. Say "no confirmed findings in the reviewed scope" where accurate; never imply measured performance from static review.
+- **Fixed P0/P1/P2 findings:** location, trigger, impact, confidence/evidence, and fix; distinguish unresolved confirmed findings from unconfirmed performance risks.
+- **Recheck after fixes:** affected tests rerun, their actual results, and follow-up review outcome.
+- **Cleanup and final state:** temporary artifacts removed or explicitly retained, restored side effects, and post-cleanup compilation/tests/smoke results.
+- **Limits and manual actions:** unavailable Editor/profiling/device checks and concrete remaining Unity Profiler, Frame Debugger, or device scenarios. Include a metric and acceptance target when specified by the task; do not invent thresholds.
+
+Use "ready for review" only when functional checks, mandatory review/fixes, and final-tree verification have completed with no unresolved P0/P1 findings or unmet acceptance criteria. Unconfirmed performance hypotheses alone do not fail review, unless the task requires a measurement that has not been obtained; list justified follow-up work. Record any unresolved P2 finding and why it remains. Missing mandatory execution makes the status partial or blocked, even when static review found no issue.
+
+On success, commit only intended changes and the report on the feature branch using project conventions. If blocked, preserve work and the report without marking the feature ready. Leave the branch for review; push, PR creation, and merge require separate task authorization. The final response gives the branch, report path, verification/review outcomes, and significant limits.
