@@ -175,7 +175,7 @@ The workflow uses Blender's built-in Python API (`bpy`) through the executable. 
 A Windows example, replacing the path with the local installation:
 
 ```powershell
-$blenderExe = 'E:\\Utilities\\Steam\\steamapps\\common\\Blender\\blender.exe'
+$blenderExe = 'E:\Utilities\Steam\steamapps\common\Blender\blender.exe'
 & $blenderExe --version
 & $blenderExe --background --python-exit-code 1 --python 'ArtSource/MyProps/build_props.py'
 if ($LASTEXITCODE -ne 0) { throw 'Blender asset build failed' }
