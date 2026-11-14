@@ -1,6 +1,6 @@
 # AI Unity Pipeline
 
-Project rules and reusable skills for Codex and Claude Code in existing Unity projects. Set up rules first, then custom skills, official Unity skills, and the Unity connection. For 3D asset authoring, optionally add the Blender workflow below. Instructions are in English; generated reports and chat summaries follow the user's language.
+Project rules and reusable skills for Codex and Claude Code in existing Unity projects. Set up rules first, then custom skills, official Unity skills, and the Unity connection. For asset authoring, optionally add the Blender prop workflow or the UI sprite workflow below. Instructions are in English; generated reports and chat summaries follow the user's language.
 
 ## 1. Installation
 
@@ -52,13 +52,14 @@ Keep both files consistent. Do not change game code or project settings.
 
 ### Step 3: Install custom skills
 
-Install `feature-cycle` and `chat-notes` first, in this order. Add `blender-props` when you want to create or edit 3D props:
+Install `feature-cycle` and `chat-notes` first, in this order. Add `blender-props` for 3D props and `unity-ui-assets` for layered UI sprites when those workflows are wanted.
 
 | Skill | Purpose | Example |
 | --- | --- | --- |
 | [feature-cycle](feature-cycle/SKILL.md) | Implement a Unity feature in a dedicated branch, verify it in Unity, fix failures, remove temporary tests, and commit the result with a Markdown status report. | `Use $feature-cycle to add saved puzzle progress.` |
 | [chat-notes](chat-notes/SKILL.md) | Save conversation decisions, results, and remaining tasks in a dated Markdown file in the project's documentation folder. | `Use $chat-notes to save this conversation.` |
 | [blender-props](blender-props/SKILL.md) — optional | Create editable Blender props from references, with materials, basic rigs, preview renders, and checked FBX exports for Unity. | `Use $blender-props to create a wooden table from these references.` |
+| [unity-ui-assets](unity-ui-assets/SKILL.md) — optional | Turn UI references into layered PNG sprites with extraction, reconstruction, selective generation, and a Before/After gallery. | `Use $unity-ui-assets to turn this menu reference into layered Unity PNG sprites.` |
 
 For Codex, ask:
 
@@ -78,6 +79,15 @@ The skill folder is at the repository root. Check existing user-level
 and project-level installations first; install it only if missing.
 ```
 
+For UI sprite production, also ask
+
+```text
+Use $skill-installer to install unity-ui-assets from
+https://github.com/SinlessDevil/AI-UnityPipeline.
+The skill folder is at the repository root. Check existing user-level
+and project-level installations first. Install it only if missing.
+```
+
 For manual installation, copy each complete skill folder, including `SKILL.md`, `agents/openai.yaml`, and any supporting `references/` or `scripts/`, into one appropriate location:
 
 | Agent | All projects for this user | This project only |
@@ -87,7 +97,7 @@ For manual installation, copy each complete skill folder, including `SKILL.md`, 
 
 Existing Codex setups may also use `~/.codex/skills/`, including the bundled installer's default destination. Check that location before adding a duplicate. Keep one installation per skill for each agent. If a skill is not visible, start a new session.
 
-Feature Cycle needs the pinned Unity Editor and a usable license for verification. Chat Notes does not require a Unity connection. Blender Props needs a local Blender executable with Python support and permission to write the requested asset files; its modeling and FBX checks do not require a Unity connection.
+Feature Cycle needs the pinned Unity Editor and a usable license for verification. Chat Notes does not require a Unity connection. Blender Props needs a local Blender executable with Python support and permission to write the requested asset files; its modeling and FBX checks do not require a Unity connection. Unity UI Assets includes a gallery helper requiring Python 3.9 or later with the standard library. Selective generation uses an available image-generation backend, such as a configured ComfyUI workflow. Record any pending generation and the actual Unity verification performed.
 
 ### Step 4: Install official Unity skills
 
@@ -206,19 +216,46 @@ Expected deliverables:
 
 Keep authoring sources outside `Assets` for explicit FBX delivery. Import into Unity and create materials/prefabs through the Editor when that integration is requested. Preserve Unity-generated GUIDs and the project's rendering conventions. A correct Blender render or Blender → FBX → Blender check does **not** establish that URP materials or animation work in Unity; verify that separately or mark it pending.
 
+### Step 7: Optional UI sprite workflow
+
+Install [unity-ui-assets](unity-ui-assets/SKILL.md) from Step 3 to turn a game UI screenshot, mockup, or art reference into a layered sprite pack. Supply the reference image, output folder, layout and style constraints, and any previous pack for comparison.
+
+```text
+Use $unity-ui-assets to turn this menu reference into layered PNG sprites
+for Unity. Save the run in ArtSource/UI/MainMenu. Extract reusable artwork,
+reconstruct covered regions, and generate missing elements where needed.
+Keep labels and values live in Unity. Deliver Unity/ PNGs, an assembled
+preview, manifest.json, QA.md, and Gallery.html with Before/After pairs.
+Write the QA report in Russian and report any unresolved assets.
+```
+
+The skill inventories elements, chooses extraction, reconstruction, generation, or live UI treatment, and reviews candidates against the reference. Its default allows three retries per asset after the initial attempt, retaining the best candidate and recording unresolved defects.
+
+For a breakdown-only request, ask for the inventory and gallery before production. The gallery can show a layout preview and source crops while exports are pending. Full production runs include the assembled screen, selected PNGs, and any requested cutout comparisons. Keep run-relative image paths so the gallery remains portable.
+
+Use the included [manifest and gallery guide](unity-ui-assets/references/run-manifest.md) and [gallery helper](unity-ui-assets/scripts/build_gallery.py). From the installed skill folder, run
+
+```bash
+python scripts/build_gallery.py /path/to/run/manifest.json
+```
+
+The helper verifies referenced images exist inside the run folder before writing `Gallery.html`. Inspect the rendered gallery and sprites at their intended display size. Record PNG review and any Unity Editor import or layout checks actually performed.
+
 ## 2. Update Instructions
 
 Treat a general request to update this setup as a check-and-complete operation: inspect existing components, preserve what works, and install only what is missing. Updating an installed component to a newer version requires an explicit version-update request.
 
 ### Step 1: Inspect what exists
 
-Check both rule files, all relevant skill scopes, installed Unity plugins, the Unity version, CLI, Pipeline package, and MCP entries. Plugins may already supply the skills or connection. Check actual availability, not just whether a folder exists. For projects using Blender authoring, also check `blender-props` and the configured Blender executable/version; otherwise mark those optional components as not applicable.
+Check both rule files, all relevant skill scopes, installed Unity plugins, the Unity version, CLI, Pipeline package, and MCP entries. Plugins may already supply the skills or connection. Check actual availability, not just whether a folder exists. For projects using Blender authoring, also check `blender-props` and the configured Blender executable/version; otherwise mark those optional components as not applicable. For UI sprite work, check `unity-ui-assets`, Python 3.9 or later, and any generation backend used by that project.
 
 | Component | If present and working | If missing |
 | --- | --- | --- |
 | `AGENTS.md` / `CLAUDE.md` | Keep the adapted project rules; do not download replacements over them. | Copy only the missing file and adapt it to this project and the other rule file. |
 | `feature-cycle` / `chat-notes` | Keep the installed skill; do not reinstall in another scope. | Install only the missing skill from this repository. |
 | `blender-props` (optional) | Keep the installed skill and local adaptations. | Install from this repository when Blender prop authoring is wanted. |
+| `unity-ui-assets` (optional) | Keep the installed skill, its supporting files, and local adaptations. | Install the complete folder from this repository when UI sprite production is wanted. |
+| UI sprite tooling (optional) | Keep working Python and generation workflows. | Check Python 3.9 or later for the gallery helper and available generation inputs. Report missing prerequisites or pending generation. |
 | Blender executable (optional) | Keep the working executable/version and local path. | Locate an existing installation; if absent, report the prerequisite and obtain authorization before installing it. |
 | Official Unity skills or plugin | Keep the existing compatible distribution. | Install a compatible official distribution for the intended agent. |
 | Unity CLI | Keep the working installation. | Install if the chosen Unity 6+ connection needs it. |
@@ -245,7 +282,7 @@ Keep project-specific rendering, UI, dependency management, version, platform, a
 
 For an explicit skill or plugin version update, use the original installation method and preserve local edits. The Codex skill installer refuses to overwrite an existing skill folder; it is not an in-place updater. Do not delete an installation just to bypass that check. Compare and merge changes deliberately. Update the CLI through the package manager or installation method that owns it, and check compatibility before changing Editor packages.
 
-Confirm that both rule files match the project, skills are discoverable without duplicates, and the Unity connection works where applicable. Report what was already present, added, repaired, or skipped, and any remaining blocker. Claim connection verification only after a request reaches the intended Editor. For the Blender workflow, distinguish executable detection, inspected source/render output, FBX round-trip checks, and actual Unity import/playback verification. Do not rebuild an existing asset set merely to update the skill.
+Confirm that both rule files match the project, skills are discoverable without duplicates, and the Unity connection works where applicable. Report what was already present, added, repaired, or skipped, and any remaining blocker. Claim connection verification only after a request reaches the intended Editor. For the Blender workflow, distinguish executable detection, inspected source/render output, FBX round-trip checks, and actual Unity import/playback verification. Do not rebuild an existing asset set merely to update the skill. For the UI sprite workflow, check skill discoverability, supporting links, and the gallery helper. When reviewing an existing run, validate its image links and record PNG review and any Unity Editor checks performed. Preserve existing sprite packs when updating the skill.
 
 Example update request:
 
@@ -254,8 +291,10 @@ Check and complete this project's AI Unity Pipeline setup using
 https://github.com/SinlessDevil/AI-UnityPipeline.
 Inspect existing rules, skills, plugins, Unity version, CLI, Pipeline
 package, and MCP connections first. If Blender prop authoring is enabled,
-also check blender-props and the Blender executable. Preserve working installations and
-project customizations. Install only missing components, repair specific
+also check blender-props and the Blender executable. If UI sprite production
+is enabled, check unity-ui-assets, Python, and its generation backend.
+Preserve working installations and project customizations. Install only missing components, repair specific
 failures, and do not create duplicates. Skip the official Editor connection
 on Unity versions older than 6. Report changes and actual verification.
 ```
+
