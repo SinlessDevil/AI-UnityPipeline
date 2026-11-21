@@ -1,4 +1,0 @@
-interface:
-  display_name: "Blender Props"
-  short_description: "Create Blender props, rigs, and Unity FBX exports"
-  default_prompt: "Use $blender-props to create a simple 3D prop from my references, with an editable Blender source, materials, preview renders, and a checked FBX export for Unity."

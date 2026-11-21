@@ -1,4 +1,0 @@
-interface:
-  display_name: "Unity UI Assets"
-  short_description: "Turn UI references into Unity-ready sprites"
-  default_prompt: "Use $unity-ui-assets to turn this UI reference into layered PNG sprites for Unity with a before-and-after gallery."
